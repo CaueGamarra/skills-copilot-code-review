@@ -25,6 +25,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
 
+  // Announcement elements
+  const announcementBanner = document.getElementById("announcement-banner");
+  const announcementTrack = document.getElementById("announcement-track");
+  const manageAnnouncementsButton = document.getElementById(
+    "manage-announcements-button"
+  );
+  const announcementsModal = document.getElementById("announcements-modal");
+  const closeAnnouncementsModal = document.querySelector(
+    ".close-announcements-modal"
+  );
+  const announcementsManagementList = document.getElementById(
+    "announcements-management-list"
+  );
+  const announcementsManagerMessage = document.getElementById(
+    "announcements-manager-message"
+  );
+  const announcementForm = document.getElementById("announcement-form");
+  const announcementIdInput = document.getElementById("announcement-id");
+  const announcementMessageInput = document.getElementById("announcement-message");
+  const announcementStartDateInput = document.getElementById(
+    "announcement-start-date"
+  );
+  const announcementExpirationDateInput = document.getElementById(
+    "announcement-expiration-date"
+  );
+  const announcementSubmitButton = document.getElementById(
+    "announcement-submit-button"
+  );
+  const announcementCancelEditButton = document.getElementById(
+    "announcement-cancel-edit"
+  );
+
   // Activity categories with corresponding colors
   const activityTypes = {
     sports: { label: "Esportes", color: "#e8f5e9", textColor: "#2e7d32" },
@@ -40,6 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
+  let announcementCache = [];
+  let managementAnnouncementCache = [];
 
   // Authentication state
   let currentUser = null;
@@ -146,15 +180,19 @@ document.addEventListener("DOMContentLoaded", () => {
       loginButton.classList.add("hidden");
       userInfo.classList.remove("hidden");
       displayName.textContent = currentUser.display_name;
+      manageAnnouncementsButton.classList.remove("hidden");
     } else {
       loginButton.classList.remove("hidden");
       userInfo.classList.add("hidden");
       displayName.textContent = "";
+      manageAnnouncementsButton.classList.add("hidden");
+      closeAnnouncementsModalHandler();
     }
 
     updateAuthBodyClass();
     // Refresh the activities to update the UI
     fetchActivities();
+    fetchAnnouncements();
   }
 
   // Update body class for CSS targeting
@@ -236,13 +274,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event listeners for authentication
   loginButton.addEventListener("click", openLoginModal);
+  manageAnnouncementsButton.addEventListener("click", openAnnouncementsModal);
   logoutButton.addEventListener("click", logout);
   closeLoginModal.addEventListener("click", closeLoginModalHandler);
+  closeAnnouncementsModal.addEventListener("click", closeAnnouncementsModalHandler);
 
   // Close login modal when clicking outside
   window.addEventListener("click", (event) => {
     if (event.target === loginModal) {
       closeLoginModalHandler();
+    }
+    if (event.target === announcementsModal) {
+      closeAnnouncementsModalHandler();
     }
   });
 
@@ -277,6 +320,319 @@ document.addEventListener("DOMContentLoaded", () => {
       activitiesList.appendChild(skeletonCard);
     }
   }
+
+  function showAnnouncementsManagerMessage(text, type) {
+    announcementsManagerMessage.textContent = text;
+    announcementsManagerMessage.className = `message ${type}`;
+    announcementsManagerMessage.classList.remove("hidden");
+
+    setTimeout(() => {
+      announcementsManagerMessage.classList.add("hidden");
+    }, 5000);
+  }
+
+  function formatAnnouncementDate(dateString) {
+    if (!dateString) {
+      return "Início imediato";
+    }
+
+    return new Date(`${dateString}T00:00:00`).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  function renderAnnouncementBanner(announcements) {
+    if (!announcements || announcements.length === 0) {
+      announcementBanner.classList.add("hidden");
+      announcementTrack.innerHTML = "";
+      return;
+    }
+
+    announcementBanner.classList.remove("hidden");
+
+    announcementTrack.innerHTML = announcements
+      .map(
+        (announcement) => `
+          <div class="announcement-pill">
+            <span class="announcement-badge">📢 Comunicado</span>
+            <span class="announcement-text">${announcement.message}</span>
+            <span class="announcement-expiration">Válido até ${formatAnnouncementDate(
+              announcement.expiration_date
+            )}</span>
+          </div>
+        `
+      )
+      .join("");
+  }
+
+  async function fetchAnnouncements() {
+    try {
+      const response = await fetch("/announcements");
+      if (!response.ok) {
+        throw new Error("Unable to load announcements");
+      }
+
+      announcementCache = await response.json();
+      renderAnnouncementBanner(announcementCache);
+    } catch (error) {
+      console.error("Erro ao buscar anúncios:", error);
+      announcementBanner.classList.add("hidden");
+    }
+  }
+
+  function resetAnnouncementForm() {
+    announcementIdInput.value = "";
+    announcementForm.reset();
+    announcementSubmitButton.textContent = "Salvar anúncio";
+    announcementCancelEditButton.classList.add("hidden");
+  }
+
+  function startEditingAnnouncement(announcementId) {
+    const announcement = managementAnnouncementCache.find(
+      (item) => item.id === announcementId
+    );
+
+    if (!announcement) {
+      return;
+    }
+
+    announcementIdInput.value = announcement.id;
+    announcementMessageInput.value = announcement.message;
+    announcementStartDateInput.value = announcement.start_date || "";
+    announcementExpirationDateInput.value = announcement.expiration_date;
+    announcementSubmitButton.textContent = "Atualizar anúncio";
+    announcementCancelEditButton.classList.remove("hidden");
+    announcementMessageInput.focus();
+  }
+
+  function renderManagementAnnouncements(announcements) {
+    if (!announcements || announcements.length === 0) {
+      announcementsManagementList.innerHTML = `
+        <div class="empty-announcements">
+          <p>Nenhum anúncio cadastrado no momento.</p>
+        </div>
+      `;
+      return;
+    }
+
+    announcementsManagementList.innerHTML = announcements
+      .map(
+        (announcement) => `
+          <article class="announcement-item">
+            <p class="announcement-item-message">${announcement.message}</p>
+            <div class="announcement-item-meta">
+              <span>Início: ${formatAnnouncementDate(
+                announcement.start_date
+              )}</span>
+              <span>Expira em: ${formatAnnouncementDate(
+                announcement.expiration_date
+              )}</span>
+            </div>
+            <div class="announcement-item-actions">
+              <button class="announcement-edit" data-announcement-id="${
+                announcement.id
+              }">Editar</button>
+              <button class="announcement-delete" data-announcement-id="${
+                announcement.id
+              }">Excluir</button>
+            </div>
+          </article>
+        `
+      )
+      .join("");
+
+    const editButtons = announcementsManagementList.querySelectorAll(
+      ".announcement-edit"
+    );
+    editButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        startEditingAnnouncement(button.dataset.announcementId);
+      });
+    });
+
+    const deleteButtons = announcementsManagementList.querySelectorAll(
+      ".announcement-delete"
+    );
+    deleteButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const announcementId = button.dataset.announcementId;
+
+        showConfirmationDialog(
+          "Tem certeza que deseja excluir este anúncio?",
+          async () => {
+            await deleteAnnouncement(announcementId);
+          }
+        );
+      });
+    });
+  }
+
+  async function loadAnnouncementsForManagement() {
+    if (!currentUser) {
+      return;
+    }
+
+    announcementsManagementList.innerHTML = "<p>Carregando anúncios...</p>";
+
+    try {
+      const response = await fetch(
+        `/announcements/all?teacher_username=${encodeURIComponent(
+          currentUser.username
+        )}`
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Não foi possível listar os anúncios");
+      }
+
+      managementAnnouncementCache = data;
+      renderManagementAnnouncements(managementAnnouncementCache);
+    } catch (error) {
+      announcementsManagementList.innerHTML =
+        "<p>Falha ao carregar anúncios para gerenciamento.</p>";
+      showAnnouncementsManagerMessage(
+        "Falha ao carregar anúncios para gerenciamento.",
+        "error"
+      );
+      console.error("Erro ao carregar anúncios para gerenciamento:", error);
+    }
+  }
+
+  function openAnnouncementsModal() {
+    if (!currentUser) {
+      showMessage("Você precisa estar logado para gerenciar anúncios.", "error");
+      return;
+    }
+
+    resetAnnouncementForm();
+    announcementsModal.classList.remove("hidden");
+    setTimeout(() => {
+      announcementsModal.classList.add("show");
+    }, 10);
+    loadAnnouncementsForManagement();
+  }
+
+  function closeAnnouncementsModalHandler() {
+    announcementsModal.classList.remove("show");
+    setTimeout(() => {
+      announcementsModal.classList.add("hidden");
+    }, 300);
+    resetAnnouncementForm();
+  }
+
+  async function deleteAnnouncement(announcementId) {
+    if (!currentUser) {
+      showMessage("Você precisa estar logado para gerenciar anúncios.", "error");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/announcements/${encodeURIComponent(
+          announcementId
+        )}?teacher_username=${encodeURIComponent(currentUser.username)}`,
+        { method: "DELETE" }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        showAnnouncementsManagerMessage(
+          data.detail || "Falha ao excluir anúncio.",
+          "error"
+        );
+        return;
+      }
+
+      showAnnouncementsManagerMessage("Anúncio excluído com sucesso.", "success");
+      resetAnnouncementForm();
+      await loadAnnouncementsForManagement();
+      await fetchAnnouncements();
+    } catch (error) {
+      console.error("Erro ao excluir anúncio:", error);
+      showAnnouncementsManagerMessage("Falha ao excluir anúncio.", "error");
+    }
+  }
+
+  announcementCancelEditButton.addEventListener("click", resetAnnouncementForm);
+
+  announcementForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!currentUser) {
+      showMessage("Você precisa estar logado para gerenciar anúncios.", "error");
+      return;
+    }
+
+    const message = announcementMessageInput.value.trim();
+    const startDate = announcementStartDateInput.value || null;
+    const expirationDate = announcementExpirationDateInput.value;
+
+    if (!message || !expirationDate) {
+      showAnnouncementsManagerMessage(
+        "Mensagem e data de expiração são obrigatórias.",
+        "error"
+      );
+      return;
+    }
+
+    if (startDate && startDate > expirationDate) {
+      showAnnouncementsManagerMessage(
+        "A data de início não pode ser posterior à data de expiração.",
+        "error"
+      );
+      return;
+    }
+
+    const payload = {
+      message,
+      expiration_date: expirationDate,
+      start_date: startDate,
+    };
+
+    const currentAnnouncementId = announcementIdInput.value;
+    const isEditing = Boolean(currentAnnouncementId);
+
+    const endpoint = isEditing
+      ? `/announcements/${encodeURIComponent(currentAnnouncementId)}?teacher_username=${encodeURIComponent(
+          currentUser.username
+        )}`
+      : `/announcements?teacher_username=${encodeURIComponent(currentUser.username)}`;
+
+    const method = isEditing ? "PUT" : "POST";
+
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showAnnouncementsManagerMessage(
+          data.detail || "Não foi possível salvar o anúncio.",
+          "error"
+        );
+        return;
+      }
+
+      showAnnouncementsManagerMessage(
+        isEditing ? "Anúncio atualizado com sucesso." : "Anúncio criado com sucesso.",
+        "success"
+      );
+      resetAnnouncementForm();
+      await loadAnnouncementsForManagement();
+      await fetchAnnouncements();
+    } catch (error) {
+      console.error("Erro ao salvar anúncio:", error);
+      showAnnouncementsManagerMessage("Não foi possível salvar o anúncio.", "error");
+    }
+  });
 
   // Format schedule for display - handles both old and new format
   function formatSchedule(details) {
@@ -902,5 +1258,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize app
   checkAuthentication();
   initializeFilters();
+  fetchAnnouncements();
   fetchActivities();
 });

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
 /* Color palette */
 :root {
   /* Primary colors */
@@ -36,11 +38,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Manrope", "Segoe UI", sans-serif;
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Manrope", "Segoe UI", sans-serif;
   line-height: 1.4;
   color: var(--text-primary);
   max-width: 1200px;
@@ -433,7 +435,8 @@ button {
 }
 
 .close-modal,
-.close-login-modal {
+.close-login-modal,
+.close-announcements-modal {
   position: absolute;
   right: 12px;
   top: 8px;
@@ -666,9 +669,202 @@ footer {
 }
 
 .announcement-banner {
-  background-color: #4caf50;
-  color: white;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid #ffe1b4;
+  background: linear-gradient(120deg, #fff7e6 0%, #ffeecf 100%);
+  padding: 10px;
+  overflow-x: auto;
+  box-shadow: 0 10px 18px rgba(221, 127, 0, 0.12);
+}
+
+.announcement-track {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  min-width: max-content;
+}
+
+.announcement-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #ffd08b;
+  animation: riseIn 0.35s ease;
+}
+
+.announcement-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #9a5100;
+  background: #ffe3b5;
+  border-radius: 999px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.announcement-text {
+  font-size: 0.85rem;
+  color: #533100;
+  font-weight: 600;
+}
+
+.announcement-expiration {
+  font-size: 0.75rem;
+  color: #8f5d00;
+  border-left: 1px solid #ffd8a2;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+.manage-announcements-button {
+  padding: 5px 10px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #fff3d6 0%, #ffdba3 100%);
+  color: #4f2b00;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.manage-announcements-button:hover {
+  background: linear-gradient(120deg, #ffe7be 0%, #ffd08a 100%);
+}
+
+.announcements-modal-content {
+  max-width: 760px;
+  width: 95%;
+}
+
+.announcement-form {
+  background: #f8fbff;
+  border: 1px solid #dce8ff;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+#announcement-message {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.announcement-form-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.secondary-button {
+  background: #eef2f8;
+  color: #2f3a4f;
+}
+
+.announcements-list-wrapper h4 {
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.announcements-management-list {
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.announcement-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.announcement-item-message {
+  color: #1f2737;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.announcement-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: #4e5f7b;
+  margin-bottom: 8px;
+}
+
+.announcement-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.announcement-edit {
+  background: #eef3ff;
+  color: #203d77;
+}
+
+.announcement-delete {
+  background: #ffebef;
+  color: #8b1f34;
+}
+
+.empty-announcements {
+  border: 1px dashed #c4d4f5;
+  border-radius: 10px;
+  padding: 14px;
   text-align: center;
-  padding: 15px;
-  font-weight: bold;
+  color: #4e5f7b;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .announcement-pill {
+    min-width: 280px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .announcement-expiration {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-form-actions {
+    flex-wrap: wrap;
+  }
 }
