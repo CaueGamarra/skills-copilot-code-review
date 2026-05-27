@@ -215,7 +215,7 @@ initial_teachers = [
 
 initial_announcements = [
     {
-        "message": "Inscricoes para atividades de inverno abertas ate 15/06. Garanta sua vaga com antecedencia!",
+        "message": "Inscrições para atividades de inverno abertas até 15/06. Garanta sua vaga com antecedência!",
         "start_date": None,
         "expiration_date": "2026-06-15",
         "created_by": "principal"
